@@ -24,10 +24,26 @@ export default class GameView extends Vue {
 
   paused = false;
 
-  player = new Player(this.width, this.height);
-  fpsTps = new ScreenText(10, 20, `FPS: ${this.fps} TPS: ${this.tps}`);
+  recording = false;
 
-  drawables: Array<Drawable> = [new Rect(0, 0, this.width, this.height), this.player, this.fpsTps];
+  playingBack = false;
+
+  recordedInputs: number[] = [];
+
+  player = new Player(this.width, this.height);
+  infoText = new ScreenText(
+    10,
+    20,
+    `FPS: ${this.fps} TPS: ${this.tps} STEER: ${this.player.steer.toFixed(2)}`
+  );
+  steerText = new ScreenText(this.width - 100, 20, `STEER: ${this.player.steer.toFixed(2)}`);
+
+  drawables: Array<Drawable> = [
+    new Rect(0, 0, this.width, this.height),
+    this.player,
+    this.infoText,
+    this.steerText,
+  ];
 
   canvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
 
@@ -48,7 +64,7 @@ export default class GameView extends Vue {
       this.tps++;
     }, 1000 / 64);
     setInterval(() => {
-      this.fpsTps.text = `FPS: ${this.fps} TPS: ${this.tps}`;
+      this.infoText.text = `FPS: ${this.fps} TPS: ${this.tps}`;
       this.fps = 0;
       this.tps = 0;
     }, 1000);
@@ -65,6 +81,7 @@ export default class GameView extends Vue {
   }
 
   handleKeyPress(e: KeyboardEvent) {
+    if (this.playingBack) return;
     switch (e.key) {
       case 'a':
         this.player.steer = -0.6;
@@ -75,12 +92,49 @@ export default class GameView extends Vue {
       case 'q':
         this.paused = !this.paused;
         break;
+      case 'r':
+        if (!this.recording) {
+          this.player.reset();
+          this.recordedInputs = [];
+        }
+        this.recording = !this.recording;
+        break;
+      case 'p':
+        this.playBackRecording();
+        break;
       default:
         break;
     }
   }
 
+  playBackRecording() {
+    this.paused = true;
+    this.recording = false;
+    this.player.reset();
+    this.playingBack = true;
+    this.paused = false;
+  }
+
+  stopPlayBack() {
+    this.paused = true;
+    this.playingBack = false;
+    setTimeout(() => {
+      this.player.reset();
+      this.paused = false;
+    }, 1000);
+  }
+
   physicsTick() {
+    if (this.recording) {
+      this.recordedInputs.push(this.player.steer);
+    }
+
+    if (this.playingBack) {
+      const steer = this.recordedInputs.shift();
+      if (steer !== undefined) this.player.steer = steer;
+      else this.stopPlayBack();
+    }
+
     if (
       this.player.vx + this.player.steer < this.maxVx &&
       this.player.vx + this.player.steer > -this.maxVx
@@ -107,6 +161,7 @@ export default class GameView extends Vue {
   }
 
   renderTick(ctx: CanvasRenderingContext2D) {
+    this.steerText.text = `STEER: ${this.player.steer.toFixed(2)}`;
     this.drawables.forEach((drawable) => drawable.draw(ctx));
   }
 }
