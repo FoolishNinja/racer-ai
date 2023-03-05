@@ -11,10 +11,12 @@ export class Player extends CanvasImage {
   readonly skidsWidth = 10;
 
   vx = 0;
-  maxVx = 10;
+  maxVx = 13;
   bounceConservationCoefficient = 0.6;
 
   steer = 0;
+
+  translatePerTick: number;
 
   canvasWidth: number;
   canvasHeight: number;
@@ -22,16 +24,17 @@ export class Player extends CanvasImage {
 
   wheels: Rect[] = [];
 
-  constructor(canvasWidth: number, canvasHeight: number) {
+  constructor(canvasWidth: number, canvasHeight: number, translatePerTick: number) {
     super(
       canvasWidth / 2 - carWidth / 2,
-      canvasHeight - carHeight - 40,
+      canvasHeight - carHeight - 100,
       carWidth,
       carHeight,
       'car-image'
     );
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
+    this.translatePerTick = translatePerTick;
   }
 
   reset() {
@@ -59,7 +62,9 @@ export class Player extends CanvasImage {
       this.x += this.vx;
     }
 
-    this.skids = this.skids.slice(0, 300).map((skid) => ({ x: skid.x, y: skid.y + 2 }));
+    this.skids = this.skids
+      .slice(0, 300)
+      .map((skid) => ({ x: skid.x, y: skid.y + this.translatePerTick * 2 }));
     this.skids.unshift({ x: this.x + 3, y: this.y + carHeight });
     this.skids.unshift({ x: this.x + carWidth - this.skidsWidth - 3, y: this.y + carHeight });
   }

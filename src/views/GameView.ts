@@ -17,6 +17,7 @@ export default class GameView extends Vue {
   tps = 0;
 
   dy = 0;
+  translatePerTick = 4;
   translateDyNextRenderTick = false;
 
   paused = false;
@@ -27,7 +28,7 @@ export default class GameView extends Vue {
 
   recordedInputs: number[] = [];
 
-  player: Player = new Player(this.width, this.height);
+  player: Player = new Player(this.width, this.height, this.translatePerTick * 2);
   infoText = new ScreenText(
     10,
     20,
@@ -50,7 +51,7 @@ export default class GameView extends Vue {
   mounted() {
     this.renderCtx = this.renderCanvas.getContext('2d');
     this.displayCtx = this.displayCanvas.getContext('2d');
-    this.player = new Player(this.width, this.height);
+    this.player = new Player(this.width, this.height, this.translatePerTick);
     this.drawables.push(this.player);
     window.addEventListener('keypress', this.handleKeyPress);
     this.start();
@@ -137,20 +138,20 @@ export default class GameView extends Vue {
       else this.stopPlayBack();
     }
 
-    this.dy--;
+    this.dy += this.translatePerTick;
     this.translateDyNextRenderTick = true;
     this.drawables.forEach((drawable) => {
-      drawable.y = drawable.stationary ? drawable.y + 1 : drawable.y;
+      drawable.y = drawable.stationary ? drawable.y + this.translatePerTick : drawable.y;
     });
   }
 
   renderTick(renderCtx: CanvasRenderingContext2D, displayCtx: CanvasRenderingContext2D) {
+    if (this.translateDyNextRenderTick) {
+      renderCtx.translate(0, -this.translatePerTick);
+      this.translateDyNextRenderTick = false;
+    }
     displayCtx.drawImage(this.renderCanvas, 0, 0);
     this.steerText.text = `VX: ${this.player.vx.toFixed(2)} STEER: ${this.player.steer.toFixed(2)}`;
     this.drawables.forEach((drawable) => drawable.draw(renderCtx));
-    if (this.translateDyNextRenderTick) {
-      renderCtx.translate(0, -1);
-      this.translateDyNextRenderTick = false;
-    }
   }
 }
