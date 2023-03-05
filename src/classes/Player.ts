@@ -1,16 +1,13 @@
+import { CanvasImage } from './CanvasImage';
 import { Rect } from './Rect';
 
-export class Player extends Rect {
+const carWidth = 44;
+const carHeight = 80;
+
+export class Player extends CanvasImage {
   readonly wheelWidth = 10;
   readonly wheelHeight = 20;
   readonly wheelOffset = 3;
-
-  topLeft: Rect;
-  topRight: Rect;
-  bottomLeft: Rect;
-  bottomRight: Rect;
-
-  color = '#f00';
 
   vx = 0;
   steer = 0;
@@ -21,39 +18,15 @@ export class Player extends Rect {
   wheels: Rect[] = [];
 
   constructor(canvasWidth: number, canvasHeight: number) {
-    super(canvasWidth / 2 - 25, canvasHeight - 120, 50, 80);
+    super(
+      canvasWidth / 2 - carWidth / 2,
+      canvasHeight - carHeight - 40,
+      carWidth,
+      carHeight,
+      'car-image'
+    );
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
-
-    this.topLeft = new Rect(
-      this.x - this.wheelOffset,
-      this.y - this.wheelOffset,
-      this.wheelWidth,
-      this.wheelHeight,
-      '#000'
-    );
-    this.topRight = new Rect(
-      this.x + this.width - this.wheelWidth + this.wheelOffset,
-      this.y - this.wheelOffset,
-      this.wheelWidth,
-      this.wheelHeight,
-      '#000'
-    );
-    this.bottomLeft = new Rect(
-      this.x - this.wheelOffset,
-      this.y + this.height - this.wheelHeight + this.wheelOffset,
-      this.wheelWidth,
-      this.wheelHeight,
-      '#000'
-    );
-    this.bottomRight = new Rect(
-      this.x + this.width - this.wheelWidth + this.wheelOffset,
-      this.y + this.height - this.wheelHeight + this.wheelOffset,
-      this.wheelWidth,
-      this.wheelHeight,
-      '#000'
-    );
-    this.wheels.push(this.topLeft, this.topRight, this.bottomLeft, this.bottomRight);
   }
 
   reset() {
@@ -64,14 +37,5 @@ export class Player extends Rect {
 
   draw(ctx: CanvasRenderingContext2D): void {
     super.draw(ctx);
-    this.drawWheels(ctx);
-  }
-
-  drawWheels(ctx: CanvasRenderingContext2D): void {
-    this.topLeft.x = this.x - this.wheelOffset;
-    this.topRight.x = this.x + this.width - this.wheelWidth + this.wheelOffset;
-    this.bottomLeft.x = this.x - this.wheelOffset;
-    this.bottomRight.x = this.x + this.width - this.wheelWidth + this.wheelOffset;
-    this.wheels.forEach((wheel) => wheel.draw(ctx));
   }
 }

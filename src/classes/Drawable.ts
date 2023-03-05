@@ -1,4 +1,4 @@
 export interface Drawable {
   draw(ctx: CanvasRenderingContext2D): void;
-  color: string;
+  color?: string;
 }

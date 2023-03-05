@@ -30,17 +30,16 @@ export default class GameView extends Vue {
 
   recordedInputs: number[] = [];
 
-  player = new Player(this.width, this.height);
+  player: Player = new Player(this.width, this.height);
   infoText = new ScreenText(
     10,
     20,
     `FPS: ${this.fps} TPS: ${this.tps} STEER: ${this.player.steer.toFixed(2)}`
   );
-  steerText = new ScreenText(this.width - 100, 20, `STEER: ${this.player.steer.toFixed(2)}`);
+  steerText = new ScreenText(this.width - 180, 20, `STEER: ${this.player.steer.toFixed(2)}`);
 
   drawables: Array<Drawable> = [
     new Rect(0, 0, this.width, this.height),
-    this.player,
     this.infoText,
     this.steerText,
   ];
@@ -51,7 +50,8 @@ export default class GameView extends Vue {
 
   mounted() {
     this.ctx = this.canvas.getContext('2d');
-
+    this.player = new Player(this.width, this.height);
+    this.drawables.push(this.player);
     window.addEventListener('keypress', this.handleKeyPress);
     this.start();
   }
@@ -147,21 +147,21 @@ export default class GameView extends Vue {
     if (this.player.vx < 0 && this.player.x + this.player.vx <= 10) {
       this.player.vx = -this.player.vx;
       this.player.x = 10 * this.bounceConservationCoefficient;
-      this.player.steer *= -0.2;
+      this.player.steer = Math.abs(this.player.steer * 0.2);
     } else if (
       this.player.vx > 0 &&
       this.player.x + this.player.vx >= this.width - this.player.width - 10
     ) {
       this.player.vx = -this.player.vx * this.bounceConservationCoefficient;
       this.player.x = this.width - this.player.width - 10;
-      this.player.steer *= -0.2;
+      this.player.steer = -Math.abs(this.player.steer * 0.2);
     } else {
       this.player.x += this.player.vx;
     }
   }
 
   renderTick(ctx: CanvasRenderingContext2D) {
-    this.steerText.text = `STEER: ${this.player.steer.toFixed(2)}`;
+    this.steerText.text = `VX: ${this.player.vx.toFixed(2)} STEER: ${this.player.steer.toFixed(2)}`;
     this.drawables.forEach((drawable) => drawable.draw(ctx));
   }
 }
