@@ -1,3 +1,4 @@
+import store from '@/store';
 import { reactive } from 'vue';
 import { Options, Vue } from 'vue-class-component';
 import { Drawable } from '../classes/Drawable';
@@ -17,7 +18,7 @@ export default class GameView extends Vue {
   tps = 0;
 
   dy = 0;
-  translatePerTick = 4;
+  translatePerTick = 5;
   translateDyNextRenderTick = false;
 
   paused = false;
@@ -28,19 +29,13 @@ export default class GameView extends Vue {
 
   recordedInputs: number[] = [];
 
-  player: Player = new Player(this.width, this.height, this.translatePerTick * 2);
+  player: Player = new Player(this.width, this.height);
   infoText = new ScreenText(
     10,
     20,
     `FPS: ${this.fps} TPS: ${this.tps} STEER: ${this.player.steer.toFixed(2)}`
   );
   steerText = new ScreenText(this.width - 180, 20, `STEER: ${this.player.steer.toFixed(2)}`);
-
-  drawables: Array<Drawable> = [
-    new Rect(0, 0, this.width, this.height),
-    this.infoText,
-    this.steerText,
-  ];
 
   renderCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
   displayCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
@@ -51,8 +46,13 @@ export default class GameView extends Vue {
   mounted() {
     this.renderCtx = this.renderCanvas.getContext('2d');
     this.displayCtx = this.displayCanvas.getContext('2d');
-    this.player = new Player(this.width, this.height, this.translatePerTick);
-    this.drawables.push(this.player);
+    this.player = new Player(this.width, this.height);
+    this.drawables.push(
+      new Rect(0, 0, this.width, this.height),
+      this.infoText,
+      this.steerText,
+      this.player
+    );
     window.addEventListener('keypress', this.handleKeyPress);
     this.start();
   }
@@ -138,20 +138,29 @@ export default class GameView extends Vue {
       else this.stopPlayBack();
     }
 
-    this.dy += this.translatePerTick;
     this.translateDyNextRenderTick = true;
-    this.drawables.forEach((drawable) => {
-      drawable.y = drawable.stationary ? drawable.y + this.translatePerTick : drawable.y;
-    });
+    this.dy -= this.translatePerTick;
   }
 
   renderTick(renderCtx: CanvasRenderingContext2D, displayCtx: CanvasRenderingContext2D) {
     if (this.translateDyNextRenderTick) {
-      renderCtx.translate(0, -this.translatePerTick);
+      renderCtx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    this.drawables
+      .filter((drawable) => drawable.stationary)
+      .forEach((drawable) => drawable.draw(renderCtx));
+    if (this.translateDyNextRenderTick) {
+      renderCtx.setTransform(1, 0, 0, 1, 0, this.dy);
       this.translateDyNextRenderTick = false;
     }
     displayCtx.drawImage(this.renderCanvas, 0, 0);
     this.steerText.text = `VX: ${this.player.vx.toFixed(2)} STEER: ${this.player.steer.toFixed(2)}`;
-    this.drawables.forEach((drawable) => drawable.draw(renderCtx));
+    this.drawables
+      .filter((drawable) => !drawable.stationary)
+      .forEach((drawable) => drawable.draw(renderCtx));
+  }
+
+  get drawables(): Drawable[] {
+    return store.state.drawables;
   }
 }

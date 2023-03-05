@@ -7,6 +7,7 @@ export class Rect implements Drawable {
   width: number;
   height: number;
   stationary: boolean;
+  type = 'rect';
 
   constructor(
     x: number,

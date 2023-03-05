@@ -4,6 +4,7 @@ import { Rect } from './Rect';
 export class CanvasImage extends Rect implements Drawable {
   domId: string;
   image: HTMLImageElement | null;
+  type = 'canvas-image';
 
   constructor(
     x: number,

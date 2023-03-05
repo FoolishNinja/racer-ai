@@ -1,5 +1,8 @@
+import store from '@/store';
 import { CanvasImage } from './CanvasImage';
+import { Drawable } from './Drawable';
 import { Rect } from './Rect';
+import { Skid } from './Skid';
 
 const carWidth = 44;
 const carHeight = 80;
@@ -8,23 +11,19 @@ export class Player extends CanvasImage {
   readonly wheelWidth = 10;
   readonly wheelHeight = 20;
   readonly wheelOffset = 3;
-  readonly skidsWidth = 10;
 
   vx = 0;
-  maxVx = 13;
+  maxVx = 10;
   bounceConservationCoefficient = 0.6;
 
   steer = 0;
 
-  translatePerTick: number;
-
   canvasWidth: number;
   canvasHeight: number;
-  skids: Array<{ x: number; y: number }> = [];
 
   wheels: Rect[] = [];
 
-  constructor(canvasWidth: number, canvasHeight: number, translatePerTick: number) {
+  constructor(canvasWidth: number, canvasHeight: number) {
     super(
       canvasWidth / 2 - carWidth / 2,
       canvasHeight - carHeight - 100,
@@ -34,7 +33,6 @@ export class Player extends CanvasImage {
     );
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
-    this.translatePerTick = translatePerTick;
   }
 
   reset() {
@@ -62,18 +60,20 @@ export class Player extends CanvasImage {
       this.x += this.vx;
     }
 
-    this.skids = this.skids
-      .slice(0, 300)
-      .map((skid) => ({ x: skid.x, y: skid.y + this.translatePerTick * 2 }));
-    this.skids.unshift({ x: this.x + 3, y: this.y + carHeight });
-    this.skids.unshift({ x: this.x + carWidth - this.skidsWidth - 3, y: this.y + carHeight });
+    store.state.drawables = [
+      ...this.drawables.filter((d) => d.type !== 'skid-mark'),
+      ...this.drawables.filter((d) => d.type === 'skid-mark').slice(0, 300),
+    ];
+
+    this.drawables.unshift(new Skid(this.x + 3, this.y + carHeight));
+    this.drawables.unshift(new Skid(this.x + carWidth - Skid.skidsWidth - 3, this.y + carHeight));
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    this.skids.forEach((skid) => {
-      ctx.fillStyle = '#3d3d3d';
-      ctx.fillRect(skid.x, skid.y, this.skidsWidth, 5);
-    });
     super.draw(ctx);
+  }
+
+  get drawables(): Drawable[] {
+    return store.state.drawables;
   }
 }

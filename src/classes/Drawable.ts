@@ -4,4 +4,5 @@ export interface Drawable {
   stationary: boolean;
   draw(ctx: CanvasRenderingContext2D): void;
   color?: string;
+  type: string;
 }

@@ -1,14 +1,12 @@
+import { Drawable } from '@/classes/Drawable';
 import { createStore } from 'vuex';
 
 export default createStore({
   state: {
+    drawables: [] as Drawable[],
   },
-  getters: {
-  },
-  mutations: {
-  },
-  actions: {
-  },
-  modules: {
-  },
+  getters: {},
+  mutations: {},
+  actions: {},
+  modules: {},
 });
