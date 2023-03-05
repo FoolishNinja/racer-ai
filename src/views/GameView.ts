@@ -44,12 +44,15 @@ export default class GameView extends Vue {
     this.steerText,
   ];
 
-  canvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
+  renderCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
+  displayCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
 
-  ctx: CanvasRenderingContext2D | null = null;
+  renderCtx: CanvasRenderingContext2D | null = null;
+  displayCtx: CanvasRenderingContext2D | null = null;
 
   mounted() {
-    this.ctx = this.canvas.getContext('2d');
+    this.renderCtx = this.renderCanvas.getContext('2d');
+    this.displayCtx = this.displayCanvas.getContext('2d');
     this.player = new Player(this.width, this.height);
     this.drawables.push(this.player);
     window.addEventListener('keypress', this.handleKeyPress);
@@ -72,8 +75,8 @@ export default class GameView extends Vue {
 
   tick() {
     window.requestAnimationFrame(() => {
-      if (this.ctx && !this.paused) {
-        this.renderTick(this.ctx);
+      if (this.renderCtx && this.displayCtx && !this.paused) {
+        this.renderTick(this.renderCtx, this.displayCtx);
       }
       this.fps++;
       this.tick();
@@ -160,8 +163,9 @@ export default class GameView extends Vue {
     }
   }
 
-  renderTick(ctx: CanvasRenderingContext2D) {
+  renderTick(renderCtx: CanvasRenderingContext2D, displayCtx: CanvasRenderingContext2D) {
+    displayCtx.drawImage(this.renderCanvas, 0, 0);
     this.steerText.text = `VX: ${this.player.vx.toFixed(2)} STEER: ${this.player.steer.toFixed(2)}`;
-    this.drawables.forEach((drawable) => drawable.draw(ctx));
+    this.drawables.forEach((drawable) => drawable.draw(renderCtx));
   }
 }

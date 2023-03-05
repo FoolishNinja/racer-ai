@@ -1,9 +1,10 @@
 <template>
   <div class="container">
+    <img class="d-none" id="car-image" src="@/assets/car.png" alt="car" />
+    <canvas class="d-none" ref="renderCanvas" :width="width" :height="height" style />
     <div class="row justify-content-center pt-5">
-      <img id="car-image" src="@/assets/car.png" alt="car" style="display: none" />
       <div class="col-auto">
-        <canvas ref="canvas" :width="width" :height="height" />
+        <canvas ref="displayCanvas" :width="width" :height="height" />
       </div>
     </div>
   </div>
