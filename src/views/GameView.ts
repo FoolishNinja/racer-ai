@@ -16,11 +16,8 @@ export default class GameView extends Vue {
   fps = 0;
   tps = 0;
 
-  maxVx = 10;
-
-  bounceConservationCoefficient = 0.6;
-
-  steer = 0;
+  dy = 0;
+  translateDyNextRenderTick = false;
 
   paused = false;
 
@@ -132,40 +129,28 @@ export default class GameView extends Vue {
       this.recordedInputs.push(this.player.steer);
     }
 
+    this.player.physicsTick();
+
     if (this.playingBack) {
       const steer = this.recordedInputs.shift();
       if (steer !== undefined) this.player.steer = steer;
       else this.stopPlayBack();
     }
 
-    if (
-      this.player.vx + this.player.steer < this.maxVx &&
-      this.player.vx + this.player.steer > -this.maxVx
-    ) {
-      this.player.vx += this.player.steer;
-    } else {
-      this.player.vx = this.player.vx < 0 ? -this.maxVx : this.maxVx;
-    }
-
-    if (this.player.vx < 0 && this.player.x + this.player.vx <= 10) {
-      this.player.vx = -this.player.vx;
-      this.player.x = 10 * this.bounceConservationCoefficient;
-      this.player.steer = Math.abs(this.player.steer * 0.2);
-    } else if (
-      this.player.vx > 0 &&
-      this.player.x + this.player.vx >= this.width - this.player.width - 10
-    ) {
-      this.player.vx = -this.player.vx * this.bounceConservationCoefficient;
-      this.player.x = this.width - this.player.width - 10;
-      this.player.steer = -Math.abs(this.player.steer * 0.2);
-    } else {
-      this.player.x += this.player.vx;
-    }
+    this.dy--;
+    this.translateDyNextRenderTick = true;
+    this.drawables.forEach((drawable) => {
+      drawable.y = drawable.stationary ? drawable.y + 1 : drawable.y;
+    });
   }
 
   renderTick(renderCtx: CanvasRenderingContext2D, displayCtx: CanvasRenderingContext2D) {
     displayCtx.drawImage(this.renderCanvas, 0, 0);
     this.steerText.text = `VX: ${this.player.vx.toFixed(2)} STEER: ${this.player.steer.toFixed(2)}`;
     this.drawables.forEach((drawable) => drawable.draw(renderCtx));
+    if (this.translateDyNextRenderTick) {
+      renderCtx.translate(0, -1);
+      this.translateDyNextRenderTick = false;
+    }
   }
 }

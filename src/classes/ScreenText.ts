@@ -6,6 +6,7 @@ export class ScreenText implements Drawable {
   text: string;
   color: string;
   font: string;
+  stationary = true;
 
   constructor(x: number, y: number, text: string, font = '15px Arial', color = '#000') {
     this.x = x;

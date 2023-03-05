@@ -5,8 +5,15 @@ export class CanvasImage extends Rect implements Drawable {
   domId: string;
   image: HTMLImageElement | null;
 
-  constructor(x: number, y: number, width: number, height: number, domId: string) {
-    super(x, y, width, height);
+  constructor(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    domId: string,
+    stationary = true
+  ) {
+    super(x, y, width, height, stationary);
     this.domId = domId;
     this.image = document.getElementById(domId) as HTMLImageElement;
   }
