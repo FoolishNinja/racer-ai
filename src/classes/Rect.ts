@@ -6,23 +6,14 @@ export class Rect implements Drawable {
   y: number;
   width: number;
   height: number;
-  stationary: boolean;
   type = 'rect';
 
-  constructor(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    stationary = true,
-    color = '#fff'
-  ) {
+  constructor(x: number, y: number, width: number, height: number, color = '#fff') {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
     this.color = color;
-    this.stationary = stationary;
   }
 
   draw(ctx: CanvasRenderingContext2D) {

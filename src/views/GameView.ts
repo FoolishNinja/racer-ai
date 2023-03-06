@@ -1,10 +1,6 @@
-import store from '@/store';
+import { Game } from '@/classes/Game';
 import { reactive } from 'vue';
 import { Options, Vue } from 'vue-class-component';
-import { Drawable } from '../classes/Drawable';
-import { Player } from '../classes/Player';
-import { Rect } from '../classes/Rect';
-import { ScreenText } from '../classes/ScreenText';
 
 @Options({
   components: {},
@@ -14,153 +10,29 @@ export default class GameView extends Vue {
 
   height = 800;
 
-  fps = 0;
-  tps = 0;
-
-  dy = 0;
-  translatePerTick = 5;
-  translateDyNextRenderTick = false;
-
-  paused = false;
-
-  recording = false;
-
-  playingBack = false;
-
-  recordedInputs: number[] = [];
-
-  player: Player = new Player(this.width, this.height);
-  infoText = new ScreenText(
-    10,
-    20,
-    `FPS: ${this.fps} TPS: ${this.tps} STEER: ${this.player.steer.toFixed(2)}`
-  );
-  steerText = new ScreenText(this.width - 180, 20, `STEER: ${this.player.steer.toFixed(2)}`);
-
-  renderCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
+  scrollCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
+  fixedCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
   displayCanvas: HTMLCanvasElement = reactive({} as HTMLCanvasElement);
 
-  renderCtx: CanvasRenderingContext2D | null = null;
-  displayCtx: CanvasRenderingContext2D | null = null;
+  game: Game | null = null;
 
   mounted() {
-    this.renderCtx = this.renderCanvas.getContext('2d');
-    this.displayCtx = this.displayCanvas.getContext('2d');
-    this.player = new Player(this.width, this.height);
-    this.drawables.push(
-      new Rect(0, 0, this.width, this.height),
-      this.infoText,
-      this.steerText,
-      this.player
-    );
-    window.addEventListener('keypress', this.handleKeyPress);
-    this.start();
-  }
+    const scrollCtx = this.scrollCanvas.getContext('2d');
+    const fixedCtx = this.fixedCanvas.getContext('2d');
+    const displayCtx = this.displayCanvas.getContext('2d');
 
-  start() {
-    this.tick();
-    setInterval(() => {
-      if (this.paused) return;
-      this.physicsTick();
-      this.tps++;
-    }, 1000 / 64);
-    setInterval(() => {
-      this.infoText.text = `FPS: ${this.fps} TPS: ${this.tps}`;
-      this.fps = 0;
-      this.tps = 0;
-    }, 1000);
-  }
-
-  tick() {
-    window.requestAnimationFrame(() => {
-      if (this.renderCtx && this.displayCtx && !this.paused) {
-        this.renderTick(this.renderCtx, this.displayCtx);
-      }
-      this.fps++;
-      this.tick();
-    });
-  }
-
-  handleKeyPress(e: KeyboardEvent) {
-    if (this.playingBack) return;
-    switch (e.key) {
-      case 'a':
-        this.player.steer = -0.6;
-        break;
-      case 'd':
-        this.player.steer = 0.6;
-        break;
-      case 'q':
-        this.paused = !this.paused;
-        break;
-      case 'r':
-        if (!this.recording) {
-          this.player.reset();
-          this.recordedInputs = [];
-        }
-        this.recording = !this.recording;
-        break;
-      case 'p':
-        this.playBackRecording();
-        break;
-      default:
-        break;
+    if (scrollCtx && fixedCtx && displayCtx) {
+      this.game = new Game(
+        this.scrollCanvas,
+        this.fixedCanvas,
+        this.displayCanvas,
+        scrollCtx,
+        fixedCtx,
+        displayCtx,
+        this.width,
+        this.height
+      );
+      this.game.start();
     }
-  }
-
-  playBackRecording() {
-    this.paused = true;
-    this.recording = false;
-    this.player.reset();
-    this.playingBack = true;
-    this.paused = false;
-  }
-
-  stopPlayBack() {
-    this.paused = true;
-    this.playingBack = false;
-    setTimeout(() => {
-      this.player.reset();
-      this.paused = false;
-    }, 1000);
-  }
-
-  physicsTick() {
-    if (this.recording) {
-      this.recordedInputs.push(this.player.steer);
-    }
-
-    this.player.physicsTick();
-
-    if (this.playingBack) {
-      const steer = this.recordedInputs.shift();
-      if (steer !== undefined) this.player.steer = steer;
-      else this.stopPlayBack();
-    }
-
-    this.translateDyNextRenderTick = true;
-    this.dy -= this.translatePerTick;
-  }
-
-  renderTick(renderCtx: CanvasRenderingContext2D, displayCtx: CanvasRenderingContext2D) {
-    if (this.translateDyNextRenderTick) {
-      renderCtx.setTransform(1, 0, 0, 1, 0, 0);
-    }
-    this.drawables
-      .filter((drawable) => drawable.stationary)
-      .forEach((drawable) => drawable.draw(renderCtx));
-    if (this.translateDyNextRenderTick) {
-      renderCtx.setTransform(1, 0, 0, 1, 0, this.dy);
-      this.translateDyNextRenderTick = false;
-    }
-    displayCtx.drawImage(this.renderCanvas, 0, 0);
-    this.steerText.text = `VX: ${this.player.vx.toFixed(2)} STEER: ${this.player.steer.toFixed(2)}`;
-    this.drawables
-      .filter((drawable) => !drawable.stationary)
-      .forEach((drawable) => drawable.draw(renderCtx));
-  }
-
-  get drawables(): Drawable[] {
-    return store.state.drawables;
   }
 }

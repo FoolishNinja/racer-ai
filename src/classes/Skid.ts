@@ -5,7 +5,6 @@ export class Skid implements Drawable {
 
   x: number;
   y: number;
-  stationary = false;
   color = '#3d3d3d';
   type = 'skid-mark';
 

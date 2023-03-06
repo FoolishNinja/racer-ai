@@ -1,8 +1,5 @@
-import store from '@/store';
 import { CanvasImage } from './CanvasImage';
-import { Drawable } from './Drawable';
 import { Rect } from './Rect';
-import { Skid } from './Skid';
 
 const carWidth = 44;
 const carHeight = 80;
@@ -48,32 +45,20 @@ export class Player extends CanvasImage {
       this.vx = this.vx < 0 ? -this.maxVx : this.maxVx;
     }
 
-    if (this.vx < 0 && this.x + this.vx <= 10) {
+    if (this.vx < 0 && this.x + this.vx <= 0) {
       this.vx = -this.vx;
-      this.x = 10 * this.bounceConservationCoefficient;
+      this.x = 0;
       this.steer = Math.abs(this.steer * 0.2);
-    } else if (this.vx > 0 && this.x + this.vx >= this.canvasWidth - this.width - 10) {
+    } else if (this.vx > 0 && this.x + this.vx >= this.canvasWidth - this.width) {
       this.vx = -this.vx * this.bounceConservationCoefficient;
-      this.x = this.canvasWidth - this.width - 10;
+      this.x = this.canvasWidth - this.width;
       this.steer = -Math.abs(this.steer * 0.2);
     } else {
       this.x += this.vx;
     }
-
-    store.state.drawables = [
-      ...this.drawables.filter((d) => d.type !== 'skid-mark'),
-      ...this.drawables.filter((d) => d.type === 'skid-mark').slice(0, 300),
-    ];
-
-    this.drawables.unshift(new Skid(this.x + 3, this.y + carHeight));
-    this.drawables.unshift(new Skid(this.x + carWidth - Skid.skidsWidth - 3, this.y + carHeight));
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
     super.draw(ctx);
-  }
-
-  get drawables(): Drawable[] {
-    return store.state.drawables;
   }
 }
