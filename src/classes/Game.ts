@@ -2,6 +2,7 @@ import { Drawable } from './Drawable';
 import { Player } from './Player';
 import { Rect } from './Rect';
 import { ScreenText } from './ScreenText';
+import { StreetPiece } from './StreetPiece';
 
 export class Game {
   // Screen
@@ -27,8 +28,27 @@ export class Game {
   fps = 0;
   tps = 0;
   dy = 0;
-  dyPerTick = 3;
+  dyPerTick = 5;
   paused = false;
+  nextRoadPieceRed = false;
+  curvesPerSecond = 1;
+  minNextCurveXDifference = 60;
+  nextCurveX = 0;
+  currentRoadPieceX = 0;
+  transitionRoadPieceXPerTick = 0;
+  roadWidth = 180;
+
+  get randomCurveX(): number {
+    let newCurveX = 0;
+    while (Math.abs(newCurveX - this.nextCurveX) < this.minNextCurveXDifference) {
+      newCurveX = Math.floor(Math.random() * (this.screenWidth - this.roadWidth));
+    }
+    return newCurveX;
+  }
+
+  get xRoadTransitionPerTick(): number {
+    return Math.abs(this.currentRoadPieceX - this.nextCurveX) / 64;
+  }
 
   // Custom drawables
   player: Player;
@@ -55,6 +75,10 @@ export class Game {
     this.screenHeight = screenHeight;
     this.player = new Player(this.screenWidth, this.screenHeight);
 
+    this.nextCurveX = this.screenWidth / 2 - 100;
+    this.currentRoadPieceX = this.nextCurveX;
+    this.transitionRoadPieceXPerTick = this.xRoadTransitionPerTick;
+
     this.infoText = new ScreenText(
       10,
       20,
@@ -75,6 +99,13 @@ export class Game {
     this.scrollDrawables = [new Rect(0, this.screenHeight - 200, this.screenWidth, 200, '#5d5d5d')];
     this.fixedDrawables = [this.infoText, this.steerText, this.player];
 
+    for (let y = 0; y < this.screenHeight - 200; y += 5) {
+      this.scrollDrawables.push(
+        new StreetPiece(this.currentRoadPieceX, y, this.roadWidth, this.nextRoadPieceRed)
+      );
+      this.nextRoadPieceRed = !this.nextRoadPieceRed;
+    }
+
     window.addEventListener('keypress', (e) => this.handleKeyPress(e));
   }
 
@@ -82,14 +113,13 @@ export class Game {
     this.tick();
     this.startGameTick();
     this.startFpsTick();
+    this.startCurveTick();
   }
 
   startGameTick() {
     setInterval(() => {
       if (this.paused) return;
       this.physicsTick();
-      this.tps++;
-      this.dy += this.dyPerTick;
     }, 1000 / 64);
   }
 
@@ -99,6 +129,13 @@ export class Game {
       this.fps = 0;
       this.tps = 0;
     }, 1000);
+  }
+
+  startCurveTick() {
+    setInterval(() => {
+      this.nextCurveX = this.randomCurveX;
+      this.transitionRoadPieceXPerTick = this.xRoadTransitionPerTick;
+    }, 1000 / this.curvesPerSecond);
   }
 
   tick() {
@@ -114,10 +151,10 @@ export class Game {
   handleKeyPress(e: KeyboardEvent) {
     switch (e.key) {
       case 'a':
-        this.player.steer = -0.6;
+        this.player.steer = -0.3;
         break;
       case 'd':
-        this.player.steer = 0.6;
+        this.player.steer = 0.3;
         break;
       case 'q':
         this.paused = !this.paused;
@@ -137,11 +174,27 @@ export class Game {
 
   physicsTick() {
     this.player.physicsTick();
+
+    this.tps++;
+    this.dy += this.dyPerTick;
+    this.scrollDrawables.push(
+      new StreetPiece(this.currentRoadPieceX, -this.dy, this.roadWidth, this.nextRoadPieceRed)
+    );
+
+    if (this.currentRoadPieceX > this.nextCurveX) {
+      this.currentRoadPieceX -= this.transitionRoadPieceXPerTick;
+    } else {
+      this.currentRoadPieceX += this.transitionRoadPieceXPerTick;
+    }
+
+    this.nextRoadPieceRed = !this.nextRoadPieceRed;
+
+    this.scrollDrawables = this.scrollDrawables.filter((d) => d.y < -this.dy + this.screenHeight);
   }
 
   renderTick() {
     this.fixedCtx.clearRect(0, 0, this.screenWidth, this.screenHeight);
-    this.scrollCtx.clearRect(0, 0, this.screenWidth, this.screenHeight);
+    this.scrollCtx.clearRect(0, -this.dy, this.screenWidth, this.screenHeight);
     this.displayCtx.clearRect(0, 0, this.screenWidth, this.screenHeight);
 
     this.backgroundDrawables.forEach((drawable) => drawable.draw(this.displayCtx));
