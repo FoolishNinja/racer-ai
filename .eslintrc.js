@@ -17,5 +17,8 @@ module.exports = {
     'operator-linebreak': 'off',
     'comma-dangle': 'off',
     'no-plusplus': 'off',
+    'implicit-arrow-linebreak': 'off',
+    'function-paren-newline': 'off',
+    'no-bitwise': 'off',
   },
 };

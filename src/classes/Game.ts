@@ -38,6 +38,8 @@ export class Game {
   transitionRoadPieceXPerTick = 0;
   roadWidth = 180;
 
+  playerIsAboveStreetRect = new Rect(250, 10, 15, 15, '#f00');
+
   get randomCurveX(): number {
     let newCurveX = 0;
     while (Math.abs(newCurveX - this.nextCurveX) < this.minNextCurveXDifference) {
@@ -97,7 +99,12 @@ export class Game {
 
     this.backgroundDrawables = [new Rect(0, 0, this.screenWidth, this.screenHeight, '#567d46')];
     this.scrollDrawables = [new Rect(0, this.screenHeight - 200, this.screenWidth, 200, '#5d5d5d')];
-    this.fixedDrawables = [this.infoText, this.steerText, this.player];
+    this.fixedDrawables = [
+      this.infoText,
+      this.steerText,
+      this.player,
+      this.playerIsAboveStreetRect,
+    ];
 
     for (let y = 0; y < this.screenHeight - 200; y += 5) {
       this.scrollDrawables.push(
@@ -190,6 +197,19 @@ export class Game {
     this.nextRoadPieceRed = !this.nextRoadPieceRed;
 
     this.scrollDrawables = this.scrollDrawables.filter((d) => d.y < -this.dy + this.screenHeight);
+
+    const p = this.displayCtx.getImageData(
+      this.player.x + this.player.width / 2,
+      this.player.y - 3,
+      1,
+      1
+    ).data;
+
+    // If transparency on the image
+    if (!(p[0] === 0 && p[1] === 0 && p[2] === 0 && p[3] === 0)) {
+      const hex = `#${`000000${this.rgbToHex(p[0], p[1], p[2])}`.slice(-6)}`;
+      this.playerIsAboveStreetRect.color = hex === '#5d5d5d' ? '#0f0' : '#f00';
+    }
   }
 
   renderTick() {
@@ -207,5 +227,9 @@ export class Game {
     this.displayCtx.drawImage(this.scrollCanvas, 0, 0);
     this.displayCtx.drawImage(this.fixedCanvas, 0, 0);
     this.steerText.text = `VX: ${this.player.vx.toFixed(2)} STEER: ${this.player.steer.toFixed(2)}`;
+  }
+
+  rgbToHex(r: number, g: number, b: number) {
+    return ((r << 16) | (g << 8) | b).toString(16);
   }
 }
